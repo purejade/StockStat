@@ -12,8 +12,13 @@ import json
 import codecs
 import re
 
+fundstocker = codecs.open('stocks.txt','wb','utf-8')
+
 def write_page(content,filename='index.html'):
     open(filename,'wb').write(content)
+
+stockStat = {}
+stock_code_name = {}
 
 def getAllFunds(url):
 
@@ -39,17 +44,20 @@ def getAllFunds(url):
         print "wrong"
     pass
 
-def getAllFundCode(funder):
+def getAllFundCode():
     codes = []
     with open('fund.txt','rb') as handler:
         for line in handler:
-            codes.append(line.split['\t'][0])
-    return codecs
+            codes.append(line.split('\t')[0])
+    return codes
 
 def getStocksOfFund(fundcode):
     prefix = 'http://fund.eastmoney.com/'+str(fundcode)+'.html'
     resp = requests.get(prefix)
-    parseFundPage(resp.content)
+    try:
+        parseFundPage(resp.content)
+    except:
+        print '_______'+str(fundcode)
     write_page(resp.content,'index.html')
 
 def parseFundPage(content):
@@ -68,10 +76,26 @@ def parseFundPage(content):
     stocksInfoList = re.findall(r'<ul><li class="xh">(.*?)</li><li class="mc"><a href="(.*?)">(.*?)</a></li><li class="cc"><span class="ping">(.*?)</span></li><li class="zf zhang">(.*?)</li>',content)
     if stocksInfoList:
         print stocksInfoList
+        for stocksInfo in stocksInfoList:
+            stockcode = stocksInfo[1][stocksInfo[1].rfind('/')+1:stocksInfo[1].rfind('.')]
+            #stockcode stockname stockshare
+            fundstocker.write(stockcode+stocksInfo[2]+stocksInfo[3]+'\n')
+            if stockStat.has_key(stockcode):
+                stockStat[stockcode] = stockStat.get(stockcode) + 1
+            else:
+                stockStat[stockcode] = 0
 
 if __name__ == '__main__':
     url = ''
     # getAllFunds(url)
-    getStocksOfFund(770001)
+    fundcodes = getAllFundCode()
+    for fundcode in fundcodes:
+        getStocksOfFund(fundcode)
+
+    stocks = sorted(stockStat.iteritems(),key=lambda d:int(d[1]),reverse=True)
+
+    print stocks
+    fundstocker.close()
+
 
 
